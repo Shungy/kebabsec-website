@@ -1,4 +1,4 @@
-baseURL = "http://example.org/"
+baseURL = "https://kebabsec.xyz/"
 languageCode = "en-us"
 title = "Kebabsec"
 theme = "hello-friend-ng"
