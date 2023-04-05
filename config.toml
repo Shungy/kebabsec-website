@@ -16,7 +16,7 @@ theme = "hello-friend-ng"
   [params.portrait]
     path     = "/logo.svg"
     alt      = "Portrait"
-    maxWidth = "150px"
+    maxWidth = "140px"
 
   [[params.social]]
     name = "twitter"
