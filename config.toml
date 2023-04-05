@@ -14,7 +14,7 @@ theme = "hello-friend-ng"
   enableGlobalLanguageMenu = false
 
   [params.portrait]
-    path     = "/logo.svg"
+    path     = "/logo.jpg"
     alt      = "Portrait"
     maxWidth = "140px"
 
