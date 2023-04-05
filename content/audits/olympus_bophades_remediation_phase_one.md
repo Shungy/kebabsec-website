@@ -25,7 +25,7 @@ In our engagement, we have found that majority of C4 issues were mitigated corre
 
 ### Parthenon.sol
 
-Parthenon.sol is a policy in bophades2&#39;s design, that acts as OlympusDAO&#39;s on-chain governance system and doubles as the Kernel&#39;s Executor.
+Parthenon.sol is a policy in bophades2's design, that acts as OlympusDAO's on-chain governance system and doubles as the Kernel's Executor.
 
 ### VohmVault.sol
 
@@ -82,9 +82,9 @@ No changes were made, `INSTR` module stores `proposalId` state and returns for p
 **[M-06](https://github.com/code-423n4/2022-08-olympus-findings/issues/239) After endorsing a proposal, user can transfer votes to another user for endorsing the same proposal again**
 *Status: Fixed*
 
-As there are no endorsements anymore, issue is mitigated, yet the same attack vector can be considered for `vote()`, yet this is not possible as this would require a withdraw/redeem action following a deposit action to get vOHM from another address, which would be unable to vote as deposit timestamp would be after the timestamp the proposal got activated. There&#39;s an important distinction here, and that is if the `transfer()` function of `VOTES` module would be added to a policy in a way that allows transfering of votes in any capability. Consider adding a deposit timestamp for this as well. See [KS2-03].
+As there are no endorsements anymore, issue is mitigated, yet the same attack vector can be considered for `vote()`, yet this is not possible as this would require a withdraw/redeem action following a deposit action to get vOHM from another address, which would be unable to vote as deposit timestamp would be after the timestamp the proposal got activated. There's an important distinction here, and that is if the `transfer()` function of `VOTES` module would be added to a policy in a way that allows transfering of votes in any capability. Consider adding a deposit timestamp for this as well. See [KS2-03].
 
-**[M-07](https://github.com/code-423n4/2022-08-olympus-findings/issues/257) Endorsed votes by a user do not decrease after the user&#39;s votes are revoked**
+**[M-07](https://github.com/code-423n4/2022-08-olympus-findings/issues/257) Endorsed votes by a user do not decrease after the user's votes are revoked**
 *Status: Fixed*
 
 This function does not exist anymore.
@@ -94,7 +94,7 @@ This function does not exist anymore.
 
 Voting is done specially for a `proposalId` and there can be more than one active proposals at a time now.
 
-**[M-10](https://github.com/code-423n4/2022-08-olympus-findings/issues/275) Voted votes cannot change after the user is issued new votes or the user&#39;s old votes are revoked during voting**
+**[M-10](https://github.com/code-423n4/2022-08-olympus-findings/issues/275) Voted votes cannot change after the user is issued new votes or the user's old votes are revoked during voting**
 *Status: Not fixed*
 
 The issue stands, but in our opinions it should be a nofix, as it makes sense to use only the votes existing at the time of the proposal activation, like a snapshot. Even though the revoking or issuing of votes does not exist anymore as functions, the newly minted votes cannot be used to vote in an old proposal, so we categorize the issue as not fixed.
@@ -123,7 +123,7 @@ As stale proposal check cannot be executed thanks to the check in [line 251](htt
 
 ---
 ### QA FINDINGS
-**[N-02](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#n-02-instr-governance-upon-modules-upgrade-all-instruction-data-should-be-carried-over-to-the-new-modules) INSTR, Governance: upon module&#39;s upgrade, all instruction data should be carried over to the new modules**
+**[N-02](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#n-02-instr-governance-upon-modules-upgrade-all-instruction-data-should-be-carried-over-to-the-new-modules) INSTR, Governance: upon module's upgrade, all instruction data should be carried over to the new modules**
 *Status: Not fixed*
 
 ---
@@ -155,31 +155,31 @@ Yet, the team should make sure that a future policy never utilizes `transfer` in
 
 **[KS2-06](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L191) [Low] Parthenon: `vote` can be passed by anyone with 0 `VOTES` balance**
 \
-    In function `vote` a caller&#39;s total balance is used to make a vote:
+    In function `vote` a caller's total balance is used to make a vote:
 
-```solidity {linenostart=193}
+```solidity {linenos=table,linenostart=193}
 uint256 userVotes = VOTES.balanceOf(msg.sender);
 ```
 \
     The function allows to pass a vote even if caller balance is 0, as there is no requirement for `userVotes` to be above 0. Voting with 0 VOTES is redundant for the caller, except [resetting action timestamp for the caller](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L222):
 
-```solidity!
+```solidity
 OlympusVotes::resetActionTimestamp(0x5ec)
 emit VotesCast(proposalId: 1, voter:0x5ec, approve: true, userVotes: 0)
 ```
 
-**Suggestion**: Revert if caller&#39;s `userVotes` balance is 0. No reason to cast a pass a 0 user vote, as it&#39;s designed to be voted with caller&#39;s balance.
+**Suggestion**: Revert if caller's `userVotes` balance is 0. No reason to cast a pass a 0 user vote, as it's designed to be voted with caller's balance.
 
 **[KS2-07](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/VohmVault.sol#L9) [Info] VohmVault: Unused custom error `VohmVault_NotWarmedUp`**
 
 **[KS2-08](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/VohmVault.sol#L36) [Info] VohmVault: max approval of external contract**
 
--    A function gets current `VOTES` address and approves to transfer ohm tokens on VOTES&#39;s behalf:
+-    A function gets current `VOTES` address and approves to transfer ohm tokens on VOTES's behalf:
 
-```solidity {linenostart=30}
+```solidity {linenos=table,linenostart=30}
 function configureDependencies() external override returns (Keycode[] memory dependencies) {
     dependencies = new Keycode[](1);
-    dependencies[0] = toKeycode(&#34;VOTES&#34;);
+    dependencies[0] = toKeycode("VOTES");
 
     VOTES = VOTESv1(getModuleAddress(dependencies[0]));
 
@@ -210,39 +210,39 @@ The time variables such as deadlines and timelocks are much smaller than how the
 
 It should be an invariant that an arbitrary caller cannot engage in an action that resets the deposit timestamp for some another arbitrary user, as this could create a griefing vector in which someone making a deposit action for someone else by dusting them periodically to render them unable to vote. This must be kept in mind if [KS2-03] is resolved in a manner that resets the deposit timestamp for a `transfer` action, in this case, this invariant should be also preserved along the codebase for `transfer` as well.
 
-**[KS2-C-2](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L259) Parthenon as a single kernel&#39;s executor governance contract**
+**[KS2-C-2](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L259) Parthenon as a single kernel's executor governance contract**
 
 As governance contract, to execute a proposal passed with enough votes, inside function `executeProposal` a call to kernel is made:
 
-```solidity {linenostart=259}
+```solidity {linenos=table,linenostart=259}
 kernel.executeAction(instructions[step].action, instructions[step].target);
 ```
 
 The function is access controlled with [`onlyExecutor`](https://github.com/OlympusDAO/bophades2/blob/develop/src/Kernel.sol#L225), suggesting that Parthenon policy contract will be the executor:
 
-```solidity {linenostart=215}
+```solidity {linenos=table,linenostart=215}
 modifier onlyExecutor() {
     if (msg.sender != executor) revert Kernel_OnlyExecutor(msg.sender);
     _;
 }
 ```
 
--    This enforces all kernel state changes to be done by OlympusDAO&#39;s on-chain governance system with ability to submit proposals;
+-    This enforces all kernel state changes to be done by OlympusDAO's on-chain governance system with ability to submit proposals;
 -    A proposal with `ChangeExecutor` action can occur, essentially allows to transfer full control of kernel execution if enough votes are reached.
 - `EXECUTION_THRESHOLD` is currently 33%, which essentially lets a minority of the voting power to overrule the entire protocol as `executor` has the ultimate authority with no checks in place.
 - While it is intended that the system should be decentralized as possible, letting the minority to be an ultimate authority is counter-intuitive.
 
 **Suggestion**: We think either raising `EXECUTION_THRESHOLD` in general, or requiring a higher threshold (majority or super-majority) for vital changes like `changeExecutor` and `migrateKernel` would resolve this issue.
 
-**[KS2-C-3](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L259) Parthenon/INSTRv1: passed instructions are not fully verified to pass kernel&#39;s execute requirements**
+**[KS2-C-3](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L259) Parthenon/INSTRv1: passed instructions are not fully verified to pass kernel's execute requirements**
 
-- [Parthenon&#39;s function `submitProposal`](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L138) allows to propose an unlimited set of instructions.
-- [OlympusInstructions&#39;s function `store`](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/INSTR/OlympusInstructions.sol#L41) makes small sanitization of inputs verifying the correctness of actions and ensuring target contract/module.
+- [Parthenon's function `submitProposal`](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L138) allows to propose an unlimited set of instructions.
+- [OlympusInstructions's function `store`](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/INSTR/OlympusInstructions.sol#L41) makes small sanitization of inputs verifying the correctness of actions and ensuring target contract/module.
 
 However [the additional internal checks](https://github.com/OlympusDAO/bophades2/blob/develop/src/Kernel.sol#L250) presented in kernel are not accounted when submitting proposal. All instructions will be verified when kernel starts executing actions:
 
-```solidity {linenostart=258}
-for (uint256 step; step &lt; totalInstructions; ) {
+```solidity {linenos=table,linenostart=258}
+for (uint256 step; step < totalInstructions; ) {
     kernel.executeAction(instructions[step].action, instructions[step].target);
     unchecked {
         ++step;

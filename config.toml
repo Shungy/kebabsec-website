@@ -6,6 +6,15 @@ theme = "hello-friend-ng"
 paginate = 99
 rssLimit  = 99
 
+[markup]
+  [markup.highlight]
+    codeFences = true
+    guessSyntax = true
+    lineNos = true
+    lineNumbersInTable = true
+    noClasses = false
+    tabWidth = 4
+
 [params]
 	dateform = "Jan 2, 2006"
 	dateformShort = "Jan 2"
@@ -85,7 +94,7 @@ rssLimit  = 99
     readOtherPosts = "Read other posts"
 
     [languages.en.params.logo]
-      logoText = "kebabsec"
+      logoText = "$ cd /home/kebabsec/"
       logoHomeLink = "/"
     # or
     #
