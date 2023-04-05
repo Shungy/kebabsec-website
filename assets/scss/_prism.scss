@@ -2,7 +2,7 @@
 
 .chroma {
     [data-theme=dark] & {
-      color: inherit; background-color: inherit;
+      color: inherit; background-color: #131415;
       .err { color: #960050; background-color: #1e0010 }
       .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
       .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
@@ -144,4 +144,28 @@
 
 .highlight table {
   background-color: inherit;
+}
+
+.highlight table tbody tr {
+  border-width: 0px;
+}
+
+.post-content {
+  tbody {
+    tr {
+      border: 0px;
+      @media (prefers-color-scheme: dark) {
+        border: 0px;
+      }
+      @media (prefers-color-scheme: light) {
+        border: 0px;
+      }
+      [data-theme=dark] & {
+        border: 0px;
+      }
+      [data-theme=light] & {
+        border: 0px;
+      }
+    }
+  }
 }
