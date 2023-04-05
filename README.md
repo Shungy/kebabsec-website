@@ -11,8 +11,9 @@ apt install hugo
 
 ### Adding content
 
-Change contents as you wish. Add new pages using `hugo`. See: https://gohugo.io/getting-started/quick-start/#add-content
+Change contents as you wish. Add new pages using `hugo new audits/audit_name.md`. Then, open
+`content/audits/audit_name.md` with your preferred text editor.
 
-Check the changes locally using `hugo server`.
+You can always check the changes live by starting a local webserver using `hugo server`.
 
-After you are done and have committed the changes, do `git push`, which will update the website.
+After you are satisfied with the changes commit and push using git, which will update the website.
