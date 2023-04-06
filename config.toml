@@ -10,10 +10,9 @@ rssLimit  = 99
   [markup.highlight]
     codeFences = true
     guessSyntax = true
-    lineNos = true
+    lineNos = false
     lineNumbersInTable = true
     noClasses = false
-    style = 'monokai'
     tabWidth = 4
 
 [params]

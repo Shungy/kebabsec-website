@@ -1,5 +1,24 @@
+.highlight {
+  border-radius: 8px;
+
+  [data-theme=dark] & {
+    background-color: #3b3d42;
+  }
+  [data-theme=light] & {
+    background-color: #eaeaea;
+  }
+}
+
+[data-theme="light"] pre code {
+  color: inherit;
+}
+
+[data-theme="dark"] pre code {
+  color: inherit;
+}
+
 .chroma {
-    .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
+    .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; background-color: none; }
     .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
     .line { display: flex; padding-left: 10px; padding-right: 10px; }
     .lnt { white-space: pre; user-select: none; padding: 0 0.4em 0 0.4em;color: #7f7f7f }
@@ -9,7 +28,7 @@
     .gs { font-weight: bold }
 
     [data-theme=dark] & {
-      color: inherit; background-color: #131415;
+      color: inherit;
       .err { color: #960050; background-color: #1e0010 }
       .hl { background-color: #413343 }
       .k { color: #66d9ef }
@@ -64,7 +83,7 @@
       .gu { color: #75715e }
     }
     [data-theme=light] & {
-      color: inherit; background-color: #efefef;
+      color: inherit;
       .err { color: #960050; background-color: #1e0010 }
       .hl { background-color: #ffffcc }
       .k { color: #00a8c8 }
@@ -155,4 +174,8 @@
       }
     }
   }
+}
+
+h2, h3, h4, h5, h6 {
+  display: initial;
 }

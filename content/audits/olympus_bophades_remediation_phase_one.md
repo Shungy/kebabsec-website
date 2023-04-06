@@ -1,255 +1,342 @@
 ---
 title: "OlympusDAO Bophades Remediation Audit First Phase"
-date: 2022-11-03T01:15:00+03:00
+date: 2022-10-17T23:37:00+03:00
 draft: false
 toc: true
 ---
 
-## Abstract
-
-This document contains the findings during the second phase of the audit for OlympusDAO, the first phase being ensuring the remediation steps taken by the team really did fix the issues raised during the Code4rena contest.
-
-This audit was conducted by [kebabsec](https://twitter.com/kebabsec) members [sai](https://twitter.com/sigh242), [FlameHorizon](https://twitter.com/FlameHorizon1) and [okkothejawa](https://twitter.com/okkothejawa) and it is concerned with the validating remediations done for the governance related issues detailed in the code4rena contest and the review of `Parthenon` and `VohmVault`.
+This audit was conducted by [kebabsec](https://twitter.com/kebabsec) members [sai](https://twitter.com/sigh242), [FlameHorizon](https://twitter.com/FlameHorizon1) and [okkothejawa](https://twitter.com/okkothejawa) and it is concerned with the validating remediations done for the issues detailed in the code4rena report and the commits in [`Remediation` pull request](https://github.com/OlympusDAO/bophades2/pull/73).
 
 All credits for the vulnerabilities detailed in the first section go to the people who found them and to code4rena, this part of the audit is simply to verify mitigation changes done by the OlympusDAO team.
 
-****Note: This report does not provide any guarantee or warranty of security for the project.****
+Issues relating to governance was left out of scope for the remediation audit due to request from the team and they will be covered in second phase of the audit.
 
-## Executive Summary
+This report consists of two parts, the first part is a brief overview of the remediation status of issues described in the code4rena. In this section we used five keywords to describe remediation status of each issue:
 
-This second phase of audit targets two contracts, [Parthenon.sol](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol) and [VohmVault.sol](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/VohmVault.sol), in their pre mainnet launch stage, as seen from the days 18th of October 2022, to the 1st of November 2022.
+*Fixed*: Issues that are completely fixed
+*Acknowledged*: Issues that the team left as is deliberately
+*Partial fix*: Issues that were not completely fixed and still need attention
+*Invalid fix*: Issues that were patched in a way resulting in new bugs
+*Out of scope*: Issue is about governance thus out of scope
 
-The audit is conducted on [develop branch](https://github.com/OlympusDAO/bophades2/tree/develop) using latest commit at the time of the engagement [356e8e7b8e362158340492e727bda87ab4f1b659](https://github.com/OlympusDAO/bophades2/tree/356e8e7b8e362158340492e727bda87ab4f1b659).
+The second part of the report is about the issues we found during the examination of the commits in [`Remediation` pull request](https://github.com/OlympusDAO/bophades2/pull/73) starting from commit `13fa439` and ending with commit `5072e5e`.
 
-In our engagement, we have found that majority of C4 issues were mitigated correctly, and the issues we found are mostly issues with low impact.
-
-### Parthenon.sol
-
-Parthenon.sol is a policy in bophades2's design, that acts as OlympusDAO's on-chain governance system and doubles as the Kernel's Executor.
-
-### VohmVault.sol
-
-VohmVault.sol is a policy created to mint and burn `VOTES` to an address in exchange for gOHM tokens, with a 1 to 1 ratio.
-
-This report consists of three parts:
-1. The first part is a brief overview of the remediation status of issues described in the code4rena. In this section we used three keywords to describe remediation status of each issue:
-
-    ***Fixed***: Issues that are completely fixed
-    ***Acknowledged***: Issues that the team left as is deliberately
-    ***Not fixed***: Issues that are not fixed
-
-
-
-
-2. The second part of the report is about the issues we found and specifically targets two contracts, `Parthenon.sol` and `VohmVault.sol`, in their pre mainnet launch stage, as seen from the days 18th of October 2022, to the 1st of November 2022.
-
-3. The third part of the report details issues that are based on speculation or trade-offs.
+This report does not provide any guarantee or warranty of the security of the project.
 
 ## REVIEW OF C4 ISSUES
 ### HIGH SEVERITY FINDINGS
 **[H-01](https://github.com/code-423n4/2022-08-olympus-findings/issues/376) In Governance.sol, it might be impossible to activate a new proposal forever after failed to execute the previous active proposal.**
-*Status: Fixed*
-
-Multiple active proposals are now allowed.
-
+*Status: Out of Scope*
 
 **[H-02](https://github.com/code-423n4/2022-08-olympus-findings/issues/392) Anyone can pass any proposal alone before first VOTES are minted**
+*Status: Out of Scope*
+
+**[H-03](https://github.com/code-423n4/2022-08-olympus-findings/issues/410) TRSRY: front-runnable setApprovalFor**
 *Status: Fixed*
 
-There is now a minimum amount required to submit a proposal now with the variable `COLLATERAL_MINIMUM`.
-
-
+Fixed with `increase/decreaseAllowance` pattern in
+https://github.com/OlympusDAO/bophades2/pull/73/commits/13fa439014df244bbedee947233af26f96ab26ad.
 
 
 
 ---
 
 ### MEDIUM SEVERITY FINDINGS
+**[M-01](https://github.com/code-423n4/2022-08-olympus-findings/issues/83) Operator::setReserveFactor doesn&#39;t check if bond market should be changed**
+*Status: Acknowledged*
+
+
+
+**[M-02](https://github.com/code-423n4/2022-08-olympus-findings/issues/117) Solmate safetransfer and safetransferfrom does not check the codesize of the token address, which may lead to fund loss**
+*Status: Partial fix*
+
+Addressed in https://github.com/OlympusDAO/bophades2/pull/73/commits/271c64650b8e8741869399812309b6f0cf7198ab, but see [KS-06].
+
+
+**[M-03](https://github.com/code-423n4/2022-08-olympus-findings/issues/118) RBS may redeploy funds automatically if price stays above or below wall for longer than _config.regenWait**
+*Status: Partial fix*
+
+See [KS-09].
+
+Addressed in https://github.com/OlympusDAO/bophades2/pull/73/commits/fd1bca07b1ab55cc84e3287b89d980b5ed273628.
 
 
 
 **[M-04](https://github.com/code-423n4/2022-08-olympus-findings/issues/132) OlympusGovernance#executeProposal: reentrancy attack vulnerable function**
-*Status: Not Fixed*
-
-The function still does not follow the CEI pattern, allowing reentrancy.
-In the [line 265](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L265) of `Parthenon.sol`, `isExecuted` is still updated after the loop. Yet, an attack like this would require a proposal consisting of malicious contracts to pass through the voting process, which is a known risk. Yet, it might be possible to trick the voter base by proposing an otherwise innocent looking malicious contract that would be only malicious if executed in a reentrant manner, thus we suggest conforming to CEI pattern by making the `isExecuted` flag true before the loop.
+*Status: Out of Scope*
 
 **[M-05](https://github.com/code-423n4/2022-08-olympus-findings/issues/201) Proposals overwrite**
-*Status: Acknowledged*
-
-No changes were made, `INSTR` module stores `proposalId` state and returns for parthenon to assign metadata to it, a new `INSTR` module may not account it.
+*Status: Out of Scope*
 
 **[M-06](https://github.com/code-423n4/2022-08-olympus-findings/issues/239) After endorsing a proposal, user can transfer votes to another user for endorsing the same proposal again**
-*Status: Fixed*
+*Status: Out of Scope*
 
-As there are no endorsements anymore, issue is mitigated, yet the same attack vector can be considered for `vote()`, yet this is not possible as this would require a withdraw/redeem action following a deposit action to get vOHM from another address, which would be unable to vote as deposit timestamp would be after the timestamp the proposal got activated. There's an important distinction here, and that is if the `transfer()` function of `VOTES` module would be added to a policy in a way that allows transfering of votes in any capability. Consider adding a deposit timestamp for this as well. See [KS2-03].
+**[M-07](https://github.com/code-423n4/2022-08-olympus-findings/issues/257) Endorsed votes by a user do not decrease after the user&#39;s votes are revoked**
+*Status: Out of Scope*
 
-**[M-07](https://github.com/code-423n4/2022-08-olympus-findings/issues/257) Endorsed votes by a user do not decrease after the user's votes are revoked**
-*Status: Fixed*
-
-This function does not exist anymore.
+**[M-08](https://github.com/code-423n4/2022-08-olympus-findings/issues/267) &#34;TWAP&#34; used is an observation-weighted-average-price, not a time-weighted one**
+*Status: Acknowledged*
 
 **[M-09](https://github.com/code-423n4/2022-08-olympus-findings/issues/273) activateProposal() need time delay**
-*Status: Fixed*
+*Status: Out of Scope*
 
-Voting is done specially for a `proposalId` and there can be more than one active proposals at a time now.
-
-**[M-10](https://github.com/code-423n4/2022-08-olympus-findings/issues/275) Voted votes cannot change after the user is issued new votes or the user's old votes are revoked during voting**
-*Status: Not fixed*
-
-The issue stands, but in our opinions it should be a nofix, as it makes sense to use only the votes existing at the time of the proposal activation, like a snapshot. Even though the revoking or issuing of votes does not exist anymore as functions, the newly minted votes cannot be used to vote in an old proposal, so we categorize the issue as not fixed.
+**[M-10](https://github.com/code-423n4/2022-08-olympus-findings/issues/275) Voted votes cannot change after the user is issued new votes or the user&#39;s old votes are revoked during voting**
+*Status: Out of Scope*
 
 **[M-11](https://github.com/code-423n4/2022-08-olympus-findings/issues/308) OlympusGovernance: Users can prevent their votes from being revoked**
-*Status: Fixed*
-There is no revoking of votes anymore, thus this issue is irrelevant.
+*Status: Out of Scope*
 
-**[M-14](https://github.com/code-423n4/2022-08-olympus-findings/issues/375) The governance system can be held hostage by a malicious user**
-*Status: Fixed*
-
-The endorse functionality is removed and multiple active proposals are allowed.
-
-
-
-**[M-17](https://github.com/code-423n4/2022-08-olympus-findings/issues/380) No Cap on Amount of VOTES means the voter_admin can get any proposal to pass**
-*Status: Fixed*
-
-Voter admin is removed.
-
-**[M-21](https://github.com/code-423n4/2022-08-olympus-findings/issues/100) OlympusGovernance - active proposal does not expire**
-*Status: Fixed*
-
-As stale proposal check cannot be executed thanks to the check in [line 251](https://github.com/OlympusDAO/bophades2/blob/ae6c4c9cba701d7527c41c512f51230350b0dc9c/src/policies/Parthenon.sol#L251), proposals expire in the current implementation.
-
-
----
-### QA FINDINGS
-**[N-02](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#n-02-instr-governance-upon-modules-upgrade-all-instruction-data-should-be-carried-over-to-the-new-modules) INSTR, Governance: upon module's upgrade, all instruction data should be carried over to the new modules**
+**[M-12](https://github.com/code-423n4/2022-08-olympus-findings/issues/317) Griefing/DOS of withdrawals by EOAs from treasury (TRSRY) possible**
 *Status: Not fixed*
 
+This issue persists in the codebase in the `develop` branch, see [KS-07] and fix by locking the function `revokePolicyApprovals` behind access control. If EOAs/multisigs were to be approved by treasury, this issue may lead to critical griefing attacks.
+
+
+**[M-13](https://github.com/code-423n4/2022-08-olympus-findings/issues/368) Missing checks in Kernel._deactivatePolicy**
+*Status: Invalid fix*
+
+Addressed in https://github.com/OlympusDAO/bophades2/pull/73/commits/7792e68ff8df979275506d2b0a296ce5500e6680, yet the commit fails to resolve the issue as the necessary logical condition is inverted wrongly, see [KS-03].
+
+**[M-14](https://github.com/code-423n4/2022-08-olympus-findings/issues/375) The governance system can be held hostage by a malicious user**
+*Status: Out of Scope*
+
+**[M-15](https://github.com/code-423n4/2022-08-olympus-findings/issues/378) Heart will stop if all rewards are swept**
+*Status: Fixed*
+
+Addressed in https://github.com/OlympusDAO/bophades2/pull/73/commits/92a3a5cbbe38cfe4e4f97134c6e4e00f5753eea2.
+
+**[M-16](https://github.com/code-423n4/2022-08-olympus-findings/issues/379) Inconsistent parameter requirements between constructor() and Set() functions in RANGE.sol and Operator.sol.**
+*Status: Fixed*
+
+Addressed in
+https://github.com/OlympusDAO/bophades2/pull/73/commits/e14901a93735a4a3fff423b63d47ec92dba1f697.
+
+**[M-17](https://github.com/code-423n4/2022-08-olympus-findings/issues/380) No Cap on Amount of VOTES means the voter_admin can get any proposal to pass**
+*Status: Out of Scope*
+
+**[M-18](https://github.com/code-423n4/2022-08-olympus-findings/issues/391) Inconsistency in staleness checks between OHM and reserve token oracles**
+*Status: Invalid fix*
+
+The issue is not resolved as the updating thresholds can still be inconsistent depending on the constructor parameters, see [KS-08].
+
+
+**[M-19](https://github.com/code-423n4/2022-08-olympus-findings/issues/403) TRSRY: reenter from `OlympusTreasury::repayLoan` to `Operator::swap`**
+*Status: Acknowledged*
+
+Addressed in
+https://github.com/OlympusDAO/bophades2/pull/73/commits/8a442ba9de331b056d5d6fbe2b612d9e55665ad0 by adding comments.
+
+**[M-20](https://github.com/code-423n4/2022-08-olympus-findings/issues/404) Operator: if WallSpread is 10000, `operate` and `beat` will revert and price information cannot be updated anymore**
+*Status: Fixed*
+
+Addressed in:
+https://github.com/OlympusDAO/bophades2/pull/73/commits/4ccb52f2f788a284afef76ecc1489f5cb7748886.
+
+**[M-21](https://github.com/code-423n4/2022-08-olympus-findings/issues/100) OlympusGovernance - active proposal does not expire**
+*Status: Out of Scope*
+
+**[M-22](https://github.com/code-423n4/2022-08-olympus-findings/issues/422) Low market bonds/swaps not working after loan is taken from treasury**
+*Status: Not fixed*
+
+We are a bit confused of this report, but from our understanding the issue is related to the fact that it may not be possible to redeem bonds in the case treasury is almost drained with a large loan. Yet, treasury doesn&#39;t implement any checks regarding reserve requirements in the debt function `incurDebt`, so we believe this issue was not addressed.
+
+**[M-23](https://github.com/code-423n4/2022-08-olympus-findings/issues/426) Treasury module is vulnerable to cross-contract reentrancy**
+*Status: Fixed with negligible side effect*
+
+See [KS-05].
+
+
+**[M-24](https://github.com/code-423n4/2022-08-olympus-findings/issues/441) Chainlink&#39;s latestRoundData Might Return Stale Results**
+*Status: Partial fix*
+
+The sanity checks on comments are not exactly implemented in the code, see [KS-01].
+
+Addressed in:
+https://github.com/OlympusDAO/bophades2/pull/73/commits/34df014792ab5211b10dc7ab7db7190fbc1c85de.
+
+**[M-25](https://github.com/code-423n4/2022-08-olympus-findings/issues/483) Moving average precision is lost**
+*Status: Fixed*
+
+Addressed in:
+https://github.com/OlympusDAO/bophades2/pull/73/commits/5072e5e6b1892c5099547aaf8dc6ac08acea9395.
+
+
+**[M-26](https://github.com/code-423n4/2022-08-olympus-findings/issues/485) Cushion bond markets are opened at wall price rather than current price**
+*Status: Fixed*
+
+**[M-27](https://github.com/code-423n4/2022-08-olympus-findings/issues/51) Unexecutable proposals when `Actions.MigrateKernel` is not last instruction**
+*Status: Not fixed*
+
+The checks that makes sure `MigrateKernel` is not the last instruction which are detailed in the report of [M-27] are not implemented.
+
+**[M-28](https://github.com/code-423n4/2022-08-olympus-findings/issues/52) Activating same Policy multiple times in Kernel possible**
+*Status: Invalid fix*
+
+Like [M-13], the issue is not resolved as AND operator is used instead of OR operator.
+
+Addressed in https://github.com/OlympusDAO/bophades2/pull/73/commits/7792e68ff8df979275506d2b0a296ce5500e6680, yet the commit fails to resolve the issue as the necessary logical condition is inverted wrongly, see [KS-03].
+
+**[M-29](https://github.com/code-423n4/2022-08-olympus-findings/issues/75) TRSRY susceptible to loan / withdraw confusion**
+*Status: Fixed*
+
+Addressed in:
+https://github.com/OlympusDAO/bophades2/pull/73/commits/d7a0bc743355b60bf414e3872c07e8009b6c57cc
+
+**[M-30](https://github.com/code-423n4/2022-08-olympus-findings/issues/79) `Heart::beat()` could be called several times in one block if no one called it for a some time**
+*Status: Fixed*
+
+Addressed in:
+https://github.com/OlympusDAO/bophades2/pull/73/commits/870bd6ff74b11d35d350b40314ac43364e6c5095
+
+**[M-31](https://github.com/code-423n4/2022-08-olympus-findings/issues/89) Protocol&#39;s Walls / cushion bonds remain active even if heart is not beating**
+*Status: Fixed*
+
+Addressed with `onlyWhileActive` modifier:
+https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Operator.sol#L212
+
+**[M-32](https://github.com/code-423n4/2022-08-olympus-findings/issues/94) Admin cannot be changed to EOA after deployment**
+*Status: Not fixed*
+
+Issue still persists as `store()` still enforces instruction targets to be contracts in https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/INSTR/OlympusInstructions.sol#L56 and as `executor` still cannot be changed to an EOA.
+
+It should be noted that as `admin` is removed, the problem persists only with `executor`, yet still valid.
+
 ---
-## Remediation Findings
+### LOW AND NON-CRITICAL SEVERITY FINDINGS
 
-**[KS2-01](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/VohmVault.sol#L51-L52) [Info] VohmVault: vOHM vault has unnecessary permissions**
+**[L-01](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-01-operator-incorrect-accounting-for-fee-on-transfer-reserve-token) Operator: incorrect accounting for fee-on-transfer reserve token**
+*Status: Not fixed*
+Not resolved.
 
-`VohmVault.sol` has permissions to call `resetActionTimestamp` and `transferFrom` of `VOTES`, yet these functions are never called in the contract.
-
-**Suggestion**: Omit these permissions if vOHM vault does not need to call mentioned functions.
-
-**[KS2-02](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/VOTES/OlympusVotes.sol#L71) [Info] Comment above `transfer` of VOTES is outdated**
-
-Firstly, the comment above `transfer` states [that the function is locked for this token](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/VOTES/OlympusVotes.sol#L71), yet the function is used in `reclaimCollateral` of `Parthenon`, [here](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L291). During our chat with the devs, we were told this comment is outdated and that the team likely changed their minds about locking `transfer`. If this is the case, this comment should be removed.
-
-**[KS2-03](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/VOTES/OlympusVotes.sol#L72) [Low] `transfer` of VOTES do not reset `lastDepositTimestamp`**
-Currently, `transfer` of `VOTES` module is only used in the `reclaimCollateral` action of `Parthenon`, thus in the current implementation, this is likely a non-issue, as the team may have decided not to apply timelock after the `reclaimCollateral` action, which requires discussion.
+**[L-02](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-02-bondcallback-incorrect-accounting-if-quotetoken-is-rebase-token) BondCallback: incorrect accounting if quoteToken is rebase token**
+*Status: Not fixed*
+Not resolved.
 
 
-Yet, the team should make sure that a future policy never utilizes `transfer` in a way that allows an arbitrary caller to send `VOTES` to another address, as that would lead to possible voting replay attacks like the one in described in [M-06] of C4 report. To make sure that this would never happen, `transfer` may reset deposit timestamp like the `transferFrom`, but implications of how `reclaimCollateral` would be affected by such change must be considered. Also see [KS2-C-1].
+**[L-03](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-03-price-unsafe-cast-for-numobservations) PRICE: unsafe cast for `numObservations`**
+*Status: Acknowledged*
+No fix applied, yet we think its unrealistic for `numObservations` to overflow uint32, as it would necessiate a long period of moving average duration and too frequent observations.
 
-**[KS2-04](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L20) [Info] Parthenon: Unused event `ProposalRegistered`**
+It is recommended to use SafeCast library when such casts can overflow.
 
-**[KS2-05](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L120) [Info] Parthenon: function `requestPermissions` contains redundant onlyKernel modifier**
- -    As the comment suggest: a view function is meant to be called only by kernel to get function selectors permitted for policy contract;
- -    Other policies do not have a modifier.
+**[L-04](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-04-operator-unsafe-cast-for-decimals) Operator: unsafe cast for decimals**
+*Status: Acknowledged*
+No fix applied, the int8 to uint8 cast can underflow but not probable.
 
-**Suggestion**: For the sake of consistency and gas costs, omit the modifier.
+It is recommended to use SafeCast library when such casts can overflow.
 
-**[KS2-06](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L191) [Low] Parthenon: `vote` can be passed by anyone with 0 `VOTES` balance**
-\
-    In function `vote` a caller's total balance is used to make a vote:
+**[L-05](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-05-bondcallback-operator-is-not-set-constructor) BondCallback: operator is not set `constructor`**
+*Status: Not fixed*
 
-```solidity {linenos=table,linenostart=193}
-uint256 userVotes = VOTES.balanceOf(msg.sender);
-```
-\
-    The function allows to pass a vote even if caller balance is 0, as there is no requirement for `userVotes` to be above 0. Voting with 0 VOTES is redundant for the caller, except [resetting action timestamp for the caller](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L222):
+No changes applied. Operator is still unset after deploy, which makes functions like `callback` revert.
 
+Remediated version still isn’t set at constructor time so L153 of `BondCallback` will fail.
+
+**[L-06](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-06-operator-missing-check-for-configparmas0-cushionfactor-in-the-constructor) Operator: missing check for configParams[0] (cushionFactor) in the constructor**
+*Status: Fixed*
+
+Resolved by appending a check for `configParams[0]` in `constructor`
+
+**[L-07](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-07-kernel-misplaced-zero-address-check-for-changekernel) Misplaced zero address check for changeKernel**
+*Status: Not fixed*
+
+`changeKernel` is left unchanged.
+
+**[L-08](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-08-bondcallback-operator-upon-modules-upgrade-the-token-approval-should-be-revoked) BondCallback, Operator: upon module&#39;s upgrade, the token approval should be revoked**
+*Status: Not fixed*
+
+Currently there’s no mitigation.
+
+BondCall, Operator approve ohm to the MINTR module, but there’s no logic to be able to revoke it in case there’s bugs and there’s the need to an emergency revoke.
+
+
+**[L-09](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#l-09-heart-if-the-issuereward-fails-the-heart-beat-will-revert) Heart: if the issueReward fails the heart beat will revert**
+*Status: Fixed*
+
+Solved by the patch made to [M-15] in https://github.com/OlympusDAO/bophades2/pull/73/commits/92a3a5cbbe38cfe4e4f97134c6e4e00f5753eea2.
+
+**[N-01](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#n-01-kernel-missing-zero-address-check-for-executor-and-admin) Kernel: missing zero address check for executor and admin**
+*Status: Not fixed*
+
+No fix applied. `admin` has been removed, executor is left unchanged.
+
+
+**[N-02](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#n-02-instr-governance-upon-modules-upgrade-all-instruction-data-should-be-carried-over-to-the-new-modules) INSTR, Governance: upon module&#39;s upgrade, all instruction data should be carried over to the new modules**
+*Status: Out of Scope*
+
+**[N-03](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#n-03-range-price-unused-import-of-fullmath) RANGE, PRICE: unused import of FullMath**
+*Status: Fixed*
+
+Addressed in: https://github.com/OlympusDAO/bophades2/pull/73/commits/f2e263356ae8b0bb3c73b7b730aa59af6fe78b29.
+
+**[N-04](https://gist.github.com/CloudEllie/5f03585853a45686985eae8c55efd1ae#n-04-price-stale-price) PRICE: stale price**
+*Status: Acknowledged*
+
+We believe that this issue is mitigated as much as possible with staleness checks but see [KS-01] and [KS-08].
+
+
+
+-------
+## ISSUES FOUND IN REMEDIATION
+
+###  [KS-01][L] Staleness sanity check is not implemented in line with documentation
+In [lines 218](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/PRICE/OlympusPrice.sol#L218) and [228](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/PRICE/OlympusPrice.sol#L218) of `OlympusPrice.sol`, it is stated that `answeredInRound` should be same with `roundId` yet the code only checks if
 ```solidity
-OlympusVotes::resetActionTimestamp(0x5ec)
-emit VotesCast(proposalId: 1, voter:0x5ec, approve: true, userVotes: 0)
+answeredInRound < roundId
+```
+even though the comment states
+```solidity
+// 3. Answered in round ID should be the same as the round ID
+```
+**Mitigation**: The line should be changed to:
+```solidity
+answeredInRound != roundId
 ```
 
-**Suggestion**: Revert if caller's `userVotes` balance is 0. No reason to cast a pass a 0 user vote, as it's designed to be voted with caller's balance.
+### [KS-02][M] No functions to decrease allowance partially in `TreasuryCustodian.sol`
 
-**[KS2-07](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/VohmVault.sol#L9) [Info] VohmVault: Unused custom error `VohmVault_NotWarmedUp`**
+Before C4 audit (master branch) it was possible for the Custodian to decrease an address&#39;s allowance of the treasury by calling `grantApproval` with a lower amount than the current one. But as now the approvals are controlled through the `increase/decreaseAllowance` pattern, `TreasuryCustodian` lacks a function to decrease an address&#39;s allowance (in contrast, it has `grantWithdrawerApproval` and `grantDebtorApproval`, which are calling TRSRY&#39;s approval incrementing functions.)
 
-**[KS2-08](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/VohmVault.sol#L36) [Info] VohmVault: max approval of external contract**
+**Mitigation**: Add functions that can decrease allowance.
 
--    A function gets current `VOTES` address and approves to transfer ohm tokens on VOTES's behalf:
+### [KS-03][M] Adding of extra sanity checks to `_activatePolicy` and `_deactivatePolicy` of Kernel.sol is not implemented correctly
 
-```solidity {linenos=table,linenostart=30}
-function configureDependencies() external override returns (Keycode[] memory dependencies) {
-    dependencies = new Keycode[](1);
-    dependencies[0] = toKeycode("VOTES");
+In lines [279](https://github.com/OlympusDAO/bophades2/blob/develop/src/Kernel.sol#L279) and [310](https://github.com/OlympusDAO/bophades2/blob/develop/src/Kernel.sol#L310) of `Kernel.sol`, two checks (one initial check and one added after the audit) are connected via an AND operator, but an OR operator should be used as in this context, the checks are used in a custom error pattern and thus the code fails if the both checks return true. Connecting them via an AND operator results in a fewer amount of faulty cases instead of a higher amount of faulty cases which is what was actually intended.
 
-    VOTES = VOTESv1(getModuleAddress(dependencies[0]));
+**Mitigation**: Use an OR operator to connect checks.
 
-    gOHM.approve(address(VOTES), type(uint256).max);
-}
-```
+### [KS-04][L] `withdrawReserves` of TRSRY might be misused to fire fake events
+The function [`withdrawReserves`](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/TRSRY/OlympusTreasury.sol#L60) is permissionless, while this does not oppose a threat, it allows any user to fire events by inputting `amount_` as 0, while having `approval` also as 0, which passes the [revert statement](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/TRSRY/OlympusTreasury.sol#L66), firing the `Withdrawal` event.
 
--   `VOTES` may be changed to new redeployed module, leaving the replaced one approved for transfering.
+**Mitigation**: Check `amount_ != 0` for a trivial fix, it shouldn&#39;t create a problem as withdrawing 0 amount of tokens is against usual use case. This check also implicitly enforces the `msg.sender` to have explicit approval from TRSRY for that specific token as non-zero `amount_` necessiates non-zero `approval`.
 
-**Suggestion**: It is encouraged to revoke the approved module whenever they are replaced.
+### [KS-05][NC] TRSRY may receive more than intended tokens through `repayDebt`
+In `repayDebt` there&#39;s an if clause in line [140](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/TRSRY/OlympusTreasury.sol#L140) that changes the received variable to `amount_`, which may cause the contract to receive more tokens than intended that would normally go to the user, while taking the difference for itself, rather than also going to repay the debt. This issue is a side-effect caused by the fix to the issue [M-23] and can be acknowledged with just a comment as its highly unlikely this would create a problem. (We don&#39;t know any tokens that transfers more to the receiver than what is sent by the sender, it would be the opposite case of a fee-on-transfer token.)
 
+**Mitigation**: We have no trivial fix and we believe a comment is sufficient to address the issue.
 
-**[KS2-09](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L77) [Info] Wrong comment**
+### [KS-06][G] Redundant `address(token).code.length` check in `safeTransferFrom` of `TransferHelper`
+Contract `TransferHelper.sol` was changed to remediate issue #117, corresponding to [M-02], by adding `address(token).code.length &gt; 0` to the `require` statements ensuring that the transaction goes through. This is correct, but this `require` statement was placed twice in the same function, both in lines [16](https://github.com/OlympusDAO/bophades2/blob/develop/src/libraries/TransferHelper.sol#L16), and in line [25](https://github.com/OlympusDAO/bophades2/blob/develop/src/libraries/TransferHelper.sol#L25), making it unnecessary and redundant. We suggest the team to keep the check in line 16, as to match the rest of the code in `TrasnferHelper.sol`.
 
-[This comment](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L77) is a duplicate of the comment for `ACTIVATION_TIMELOCK` and it actually describes a timelock instead of a deadline.
+**Mitigation**: Remove the check starting in line [25](https://github.com/OlympusDAO/bophades2/blob/develop/src/libraries/TransferHelper.sol#L25).
 
-**Suggestion**: Replace the comment.
+### [KS-07][M] Problems may arise if multisigs are approved by treasury due to `revokePolicyApprovals` in `TreasuryCustodian`
 
-**[KS2-10](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L71-L96) [Info] Hardcoded time variables are not correct in `Parthenon`**
+The function `revokePolicyApprovals` allows anyone to revoke a deactivated policy&#39;s approvals. Although this is perfectly fine, an issue could arise if a multisig is approved, as this function does not have a check to ensure only policies can be revoked. A malicious actor could grief the contract by constantly revoking previously intentionally approved addresses that are not policies. See [M-12] of C4 report.
 
-The time variables such as deadlines and timelocks are much smaller than how they should be and how they are described in the relevant comments, and while this is done on purpose for testing purposes, make sure that all of them got fixed before deployment.
+**Mitigation**: Locking the function behind access control is the most trivial fix, but if the team is wishing to keep the permissionless structure, they may use a list of deactivated policies and check against it.
 
-**Suggestion**: Replace the hardcoded values with sane ones before deployment.
+### [KS-08][M] Staleness checks in `getCurrentPrice()` can be inconsistent
 
----
-### CONSIDERATIONS
-**[KS2-C-1](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/VOTES/OlympusVotes.sol) Future policies utilizing `mint, deposit, transferFrom` of `VOTES` in certain ways may result in griefing vectors**
+By C4 issue [M-18], it was decided that price freshness tolerance for both the ETH oracle and OHM oracle should be same, yet in this version of the codebase they are assigned through a constructor parameter and it is not checked that if they are the same, thus the contract is still prone to [M-18].
 
-It should be an invariant that an arbitrary caller cannot engage in an action that resets the deposit timestamp for some another arbitrary user, as this could create a griefing vector in which someone making a deposit action for someone else by dusting them periodically to render them unable to vote. This must be kept in mind if [KS2-03] is resolved in a manner that resets the deposit timestamp for a `transfer` action, in this case, this invariant should be also preserved along the codebase for `transfer` as well.
+**Mitigation**: To mitigate, add a &#34;`ohmEthUpdateThreshold_ == reserveEthUpdateThreshold_`&#34; check to the constructor of `OlympusPrice` and add zero checks.
 
-**[KS2-C-2](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L259) Parthenon as a single kernel's executor governance contract**
+Additionally, consider adding permissioned setters for them to update later.
 
-As governance contract, to execute a proposal passed with enough votes, inside function `executeProposal` a call to kernel is made:
+Also make sure that if the provided threshold is realistically long enough for the oracle to report data.
 
-```solidity {linenos=table,linenostart=259}
-kernel.executeAction(instructions[step].action, instructions[step].target);
-```
+### [KS-09][NC] Regen parameters of `Operator.sol` are not checked in constructor
+In [L104](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Operator.sol#L104), a comment suggests a condition, ensured in [setRegenParams](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Operator.sol#L719) but does not ensure in `constructor` time, which may invalidate the comment statement. See [M-03].
 
-The function is access controlled with [`onlyExecutor`](https://github.com/OlympusDAO/bophades2/blob/develop/src/Kernel.sol#L225), suggesting that Parthenon policy contract will be the executor:
-
-```solidity {linenos=table,linenostart=215}
-modifier onlyExecutor() {
-    if (msg.sender != executor) revert Kernel_OnlyExecutor(msg.sender);
-    _;
-}
-```
-
--    This enforces all kernel state changes to be done by OlympusDAO's on-chain governance system with ability to submit proposals;
--    A proposal with `ChangeExecutor` action can occur, essentially allows to transfer full control of kernel execution if enough votes are reached.
-- `EXECUTION_THRESHOLD` is currently 33%, which essentially lets a minority of the voting power to overrule the entire protocol as `executor` has the ultimate authority with no checks in place.
-- While it is intended that the system should be decentralized as possible, letting the minority to be an ultimate authority is counter-intuitive.
-
-**Suggestion**: We think either raising `EXECUTION_THRESHOLD` in general, or requiring a higher threshold (majority or super-majority) for vital changes like `changeExecutor` and `migrateKernel` would resolve this issue.
-
-**[KS2-C-3](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L259) Parthenon/INSTRv1: passed instructions are not fully verified to pass kernel's execute requirements**
-
-- [Parthenon's function `submitProposal`](https://github.com/OlympusDAO/bophades2/blob/develop/src/policies/Parthenon.sol#L138) allows to propose an unlimited set of instructions.
-- [OlympusInstructions's function `store`](https://github.com/OlympusDAO/bophades2/blob/develop/src/modules/INSTR/OlympusInstructions.sol#L41) makes small sanitization of inputs verifying the correctness of actions and ensuring target contract/module.
-
-However [the additional internal checks](https://github.com/OlympusDAO/bophades2/blob/develop/src/Kernel.sol#L250) presented in kernel are not accounted when submitting proposal. All instructions will be verified when kernel starts executing actions:
-
-```solidity {linenos=table,linenostart=258}
-for (uint256 step; step < totalInstructions; ) {
-    kernel.executeAction(instructions[step].action, instructions[step].target);
-    unchecked {
-        ++step;
-    }
-}
-```
-
-**Impact:** If a single instruction ends up reverted, an entire proposal may not be executable, resulting in pollution of the proposals list, and bad UX.
-
-**Suggestion**: To minimize mistakes that may occur when submitting proposed instructions, add additional checks to ensure kernel can execute all proposed actions before a proposal is submitted. Yet this would result in higher gas costs with submitting proposals, so this consideration is a trade-off between UX and gas costs. If it is assumed that the majority of the proposal submitters would be sufficiently technical and able to simulate if their proposals can get executed, then having checks in `Parthenon` is not really needed, but if this is not the case, it might be good to have them.
+**Mitigation**: If possible, ensure the invariant in `constructor` time, if not, specify in comments and ensure parameters passed during deployment would satisfy the invariant.
