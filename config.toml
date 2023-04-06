@@ -40,7 +40,7 @@ rssLimit  = 99
 
   [[params.social]]
     name = "email"
-    url = "kebabsecbusiness@gmail.com"
+    url = "mailto:kebabsecbusiness@gmail.com"
 
   [[params.social]]
     name = "telegram"
