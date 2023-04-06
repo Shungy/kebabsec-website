@@ -27,6 +27,7 @@ This audit was conducted by [kebabsec](https://twitter.com/kebabsec) members [sa
 - **Recommendation**: Change the calculations to take into account that stETH/USD price feed reports in 8 decimals.
 
 ### 2. [LOW] `safeTransferFrom` and `safeTransfer` not present
+
 - As `pairToken` and `rewardToken` tokens might not be standard ERC20 tokens that revert on failure (they may return false and silently pass as opposed to more common way of reverting) or they may not return a boolean like USDT, consider utilizing a [`SafeERC20`](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/utils/SafeERC20.sol) library for token transfers throughout the contract to account for non ERC20 compliant tokens.
 - **Recommendation**: Use `safeTransfer` and `safeTransferFrom` instead of `transfer` and `transferFrom` while handling tokens other than `OHM`, especially in the abstract contract as the tokens are not known beforehand. See these [related](https://github.com/code-423n4/2021-08-notional-findings/issues/68) C4 [issues](https://github.com/code-423n4/2022-01-trader-joe-findings/issues/12).
 
@@ -88,16 +89,21 @@ uint256(int256((lpPositions[user_] * accumulatedRewardsPerShare) / 1e18) - userR
 
  -   **Recommendation:** Extend the test coverage and improve the accuracy of mocks.
 
-### 10. [INFO] [Claim reward functions does not return value](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L527-L551)
+### 10. [INFO] Claim reward functions does not return value
+
+https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L527-L551
 
 - The functions `_claimInternalRewards` and `_claimExternalRewards` are declared to return uint256, but does not return anything.
 - **Recommendation:** Function should return claimed tokens amount or be declared without return.
 
-### 11. [INFO] [`_accumulateInternalRewards` does not make state changes and can be set to view](https://github.com/OlympusDAO/bophades/blob/ss-liq-vault/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L385)
+### 11. [INFO] `_accumulateInternalRewards` does not make state changes and can be set to view
+
+https://github.com/OlympusDAO/bophades/blob/ss-liq-vault/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L385
 
 - **Recommendation:** Set function to be `view`.
 
 ### 12. [MED] Possible reentrancy in `claimRewards`
+
 - The claim function makes several external calls, presented for external token accumulation in [_accumulateExternalRewards](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/StethLiquidityVault.sol#L171-L195):
 ```solidity=182
   auraPool.rewardsPool.getReward(address(this), true);
@@ -110,13 +116,19 @@ uint256(int256((lpPositions[user_] * accumulatedRewardsPerShare) / 1e18) - userR
 -	The vault will miscalculate reward token amount if the token's decimal is not 18. The calculation occurs in following functions: [_updateInternalRewardState](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L407), [_updateExternalRewardState](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L415), [_depositUpdateRewardDebts](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L453), [_withdrawUpdateRewardState](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L484), `internalRewardsForToken` and `externalRewardsForToken`
 - **Recommendation:** Make sure all reward tokens have 18 decimals, or extend the logic to support decimals other than 18.
 
-### 14. [LOW] [`withdraw` insufficient amount input checking](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L202)
+### 14. [LOW] `withdraw` insufficient amount input checking
+
+https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L202
+
 -	The function doesn't fully ensure the correctness of passed inputs:
 	-	A user is able to call withdraw with zero amount in `lpAmount_` and `minTokenAmounts_`.
 -	`withdraw` makes external calls to Balancer and Aura, checks current token balance and makes update states to reward tokens. Which shouldn't occur.
 - **Recommendation:** Add sanity checks for `lpAmount_` and `minTokenAmounts_` .
 
-### 15. [HIGH] [Vault receiving reward tokens outside `_accumulateExternalRewards` from AURA pool can't be accounted and claimed](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/StethLiquidityVault.sol#L171-L195)
+### 15. [HIGH] Vault receiving reward tokens outside `_accumulateExternalRewards` from AURA pool can't be accounted and claimed
+
+https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/StethLiquidityVault.sol#L171-L195
+
 -	The accumulation is done by checking current's balance before and after pool call rewarded upon updating reward state when [depositing](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L430) and [withdrawing](https://github.com/OlympusDAO/bophades/blob/0b57e988377afa84b52727de0f718b9e265e7bb1/src/policies/lending/abstracts/SingleSidedLiquidityVault.sol#L490).
 -	According to the Aura's contract `BaseRewardPool` implementation, `getReward` can be called by anyone, passing the vault's address:
 ```solidity
