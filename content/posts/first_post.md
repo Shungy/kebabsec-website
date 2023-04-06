@@ -6,7 +6,3 @@ draft: false
 ---
 
 We will break your code! Bring it to us if you dare…
-
-## Subtitle
-
-Just testing…
