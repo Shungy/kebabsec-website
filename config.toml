@@ -13,6 +13,7 @@ rssLimit  = 99
     lineNos = true
     lineNumbersInTable = true
     noClasses = false
+    style = 'monokai'
     tabWidth = 4
 
 [params]
@@ -94,7 +95,7 @@ rssLimit  = 99
     readOtherPosts = "Read other posts"
 
     [languages.en.params.logo]
-      logoText = "$ cd /home/kebabsec/"
+      logoText = "/kebabsec"
       logoHomeLink = "/"
     # or
     #
