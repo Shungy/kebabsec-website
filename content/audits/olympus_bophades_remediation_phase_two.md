@@ -38,37 +38,31 @@ This report consists of three parts:
     ***Acknowledged***: Issues that the team left as is deliberately
     ***Not fixed***: Issues that are not fixed
 
-
-
-
 2. The second part of the report is about the issues we found and specifically targets two contracts, `Parthenon.sol` and `VohmVault.sol`, in their pre mainnet launch stage, as seen from the days 18th of October 2022, to the 1st of November 2022.
 
 3. The third part of the report details issues that are based on speculation or trade-offs.
 
 ## REVIEW OF C4 ISSUES
+
 ### HIGH SEVERITY FINDINGS
+
 **[H-01](https://github.com/code-423n4/2022-08-olympus-findings/issues/376) In Governance.sol, it might be impossible to activate a new proposal forever after failed to execute the previous active proposal.**
+
 *Status: Fixed*
 
 Multiple active proposals are now allowed.
-
 
 **[H-02](https://github.com/code-423n4/2022-08-olympus-findings/issues/392) Anyone can pass any proposal alone before first VOTES are minted**
 *Status: Fixed*
 
 There is now a minimum amount required to submit a proposal now with the variable `COLLATERAL_MINIMUM`.
 
-
-
-
-
 ---
 
 ### MEDIUM SEVERITY FINDINGS
 
-
-
 **[M-04](https://github.com/code-423n4/2022-08-olympus-findings/issues/132) OlympusGovernance#executeProposal: reentrancy attack vulnerable function**
+
 *Status: Not Fixed*
 
 The function still does not follow the CEI pattern, allowing reentrancy.
@@ -108,8 +102,6 @@ There is no revoking of votes anymore, thus this issue is irrelevant.
 
 The endorse functionality is removed and multiple active proposals are allowed.
 
-
-
 **[M-17](https://github.com/code-423n4/2022-08-olympus-findings/issues/380) No Cap on Amount of VOTES means the voter_admin can get any proposal to pass**
 *Status: Fixed*
 
@@ -119,7 +111,6 @@ Voter admin is removed.
 *Status: Fixed*
 
 As stale proposal check cannot be executed thanks to the check in [line 251](https://github.com/OlympusDAO/bophades2/blob/ae6c4c9cba701d7527c41c512f51230350b0dc9c/src/policies/Parthenon.sol#L251), proposals expire in the current implementation.
-
 
 ---
 ### QA FINDINGS
