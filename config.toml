@@ -44,11 +44,11 @@ rssLimit  = 99
 
   [[params.social]]
     name = "telegram"
-    url = ""
+    url = "https://t.me/kebabsec"
 
   [[params.social]]
     name = "discord"
-    url = ""
+    url = "https://discord.com/users/303927813285609482"
 
   [params.commento]
     url = "https://cdn.commento.io/js/commento.js"
