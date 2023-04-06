@@ -1,0 +1,123 @@
+---
+title: "How an informational issue ended up securing (almost) half a million dollars"
+date: 2022-08-13T00:00:00+00:00
+draft: false
+---
+
+<div class="css-175qwzc"><div><p><em><strong>How a simple bug was initially reported as informational:</strong></em></p>
+<div><figure class="rehype-figure"><div data-rmiz-wrap="visible"><style data-emotion="css ovd0pw">.css-ovd0pw{position:relative;height:100%;width:100%;}</style><div class="css-ovd0pw"><style data-emotion="css r0ukz2">.css-r0ukz2{max-width:100%;max-height:100%;}</style><img alt="" src="https://i.imgur.com/GzZQJia.png#center" class="css-r0ukz2"/></div><button aria-label="Zoom image" data-rmiz-btn-open="true"></button></div></figure></div>
+<p><strong>Actually turned out to be:</strong></p>
+<div><figure class="rehype-figure"><div data-rmiz-wrap="visible"><div class="css-ovd0pw"><img alt="" src="https://i.imgur.com/M7I5iva.png#center" class="css-r0ukz2"/></div><button aria-label="Zoom image" data-rmiz-btn-open="true"></button></div></figure></div>
+<p>It all started when my friend Sai wrote,</p>
+<blockquote>
+<p><em>“Anyone can call setToken to set a fake erc20 TAL token contract in staking.sol, which at very least does griefing as it can only be set just once. But they probably know that so i submitted informational report just in case.”</em></p>
+</blockquote>
+<p>The affected project was <a href="https://www.talentprotocol.com/" rel="noreferrer" target="_blank">Talent Protocol</a>, whose bounty program had recently launched on Immunefi. Sai thought they had a griefing attack at hand, an attack to disturb people, to force them to redeploy the contract. Sai reported it as an informational issue at first, and later resubmitted the issue as a medium. This was because Immunefi closed the initial report as griefing was listed as a medium severity impact in the bounty page and thus didn’t fit the informational classification.</p>
+<pre class="language-solidity"><code class="language-solidity"><span class="token keyword">function</span> <span class="token function">setToken</span><span class="token punctuation">(</span><span class="token builtin">address</span> _token<span class="token punctuation">)</span> <span class="token keyword">public</span> stablePhaseOnly <span class="token punctuation">{</span>
+        <span class="token keyword">require</span><span class="token punctuation">(</span>_token <span class="token operator">!=</span> <span class="token builtin">address</span><span class="token punctuation">(</span><span class="token number">0x0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">&quot;Address must be set&quot;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">require</span><span class="token punctuation">(</span>_token<span class="token punctuation">.</span><span class="token function">supportsInterface</span><span class="token punctuation">(</span><span class="token function">type</span><span class="token punctuation">(</span>IERC20<span class="token punctuation">)</span><span class="token punctuation">.</span>interfaceId<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">&quot;not a valid ERC20 token&quot;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// require(ERC165(_token).supportsInterface(type(IERC20).interfaceId), &quot;not a valid ERC20 token&quot;);</span>
+
+        ERC20 erc20 <span class="token operator">=</span> <span class="token function">ERC20</span><span class="token punctuation">(</span>_token<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">require</span><span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>erc20<span class="token punctuation">.</span><span class="token function">symbol</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">&quot;TAL&quot;</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">&quot;token name is not TAL&quot;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        token <span class="token operator">=</span> _token<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<h3>Anyone could have called the setter function</h3>
+<p>Sai was right, the function setToken() let anyone set the address of TAL token with arbitrary code as long as it was named “TAL” and followed the ERC20 standard. They were also correct about the fact that it can be used to grief the protocol. Who would want to reset the appropriate address for the token contract, spending extra gas, losing precious time and likely breaking accounting logic?</p>
+<p>Imagine an annoying scenario where a bad actor sets up a bot to monitor the chain and continuously update the contract with a malicious address after it’s set (or reset) by the protocol maintainers. Perhaps it would be the start of an endless battle with the attacker, you fix it, they break it, you fix it again, and they break it again; a lovely dance on chain.</p>
+<p>Fortunately for the protocol, who used this as an interim mitigation until it could be fully patched by migrating the contracts, the function could be called only once. Yet, this is a double-edged sword, as an attacker could have utilized this very fact to set the token contract to a malicious address and force redeployment of the contract.</p>
+<p>In order to understand why the <code>setToken()</code> could be called once, we need to dive deeper into the specifics of how the Talent Protocol’s contracts were designed.</p>
+<h3>The biphasic contract design of Talent Protocol</h3>
+<p>Talent Protocol designed their contracts in a way that there are two phases to their protocol’s operations: stable phase and token phase. As a requirement of this design, the staking contract had functions for staking stablecoins and staking their native token TAL which was planned to be used when the TAL token was ready and set.</p>
+<p>To make sure that the functions that should be used in specific phases couldn’t be used in the wrong phase, Talent Protocol implemented modifiers <code>stablePhaseOnly</code> and <code>tokenPhaseOnly</code> in their logic so that certain functions could be only called in their respective phases.</p>
+<p>These modifiers checked if the address of TAL token was set by the <code>setToken()</code>, and expectedly, <code>setToken()</code> itself had a <code>stablePhaseOnly</code> modifier to ensure that the TAL address could be set only once. Once it was set, the <code>stablePhaseOnly</code> modifier would make the function revert.</p>
+<pre class="language-solidity"><code class="language-solidity">    <span class="token comment">/// Allows execution only while in stable phase</span>
+    <span class="token keyword">modifier</span> <span class="token function">stablePhaseOnly</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">require</span><span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">_isTokenSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">&quot;Stable coin disabled&quot;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">_</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">/// Allows execution only while in token phase</span>
+    <span class="token keyword">modifier</span> <span class="token function">tokenPhaseOnly</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">require</span><span class="token punctuation">(</span><span class="token function">_isTokenSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">&quot;TAL token not yet set&quot;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">_</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<p>As an effect of this scheme and the fact that <code>setToken()</code> lacked access control, anybody could set an arbitrary ERC20 contract as the TAL token and trigger the token phase for the protocol which was in the stable phase at the time of our engagement.</p>
+<h3>Staking contract had some stakes in it too</h3>
+<p>After getting a better understanding of the protocol’s contracts, both Sai and I suspected that this vulnerability could be exploited further, and we looked for ways to upgrade the issue to critical severity.</p>
+<p>We initially searched for ways to steal the funds from the contract but the only way to get the stablecoin funds out of the contract was an admin controlled swap function, so no attacker could’ve stolen the funds even though they could set the TAL token address to a malicious contract and trigger the token phase prematurely.</p>
+<p>After rereading the contract many times hoping that I was missing a way to steal the funds, I couldn’t find anything and I felt defeated. Yet, while I was hopelessly scrolling down the contract, I vaguely realized that I didn’t need a way to steal the funds in order to have a critical issue.</p>
+<p>The contract already had 465k USD staked in it. Sure, I couldn’t move the funds as the admin controlled swap function was the only way to transfer the funds out, but what if I could make the admin unable to transfer those funds too?</p>
+<p>In a semi-hopeful state, I checked the admin controlled swap function again, and I noticed that it was making a call to the attacker configurable TAL token address.</p>
+<pre class="language-solidity"><code class="language-solidity">    <span class="token comment">/// Deposits TAL in exchange for the equivalent amount of stable coin stored in the contract</span>
+    <span class="token comment">///</span>
+    <span class="token comment">/// @notice Meant to be used by the contract owner to retrieve stable coin</span>
+    <span class="token comment">/// from phase 1, and provide the equivalent TAL amount expected from stakers</span>
+    <span class="token comment">///</span>
+    <span class="token comment">/// @param _stableAmount amount of stable coin to be retrieved.</span>
+    <span class="token comment">///</span>
+    <span class="token comment">/// @notice Corresponding TAL amount will be enforced based on the set price</span>
+    <span class="token keyword">function</span> <span class="token function">swapStableForToken</span><span class="token punctuation">(</span><span class="token builtin">uint256</span> _stableAmount<span class="token punctuation">)</span> <span class="token keyword">public</span> <span class="token function">onlyRole</span><span class="token punctuation">(</span>DEFAULT_ADMIN_ROLE<span class="token punctuation">)</span> tokenPhaseOnly <span class="token punctuation">{</span>
+        <span class="token keyword">require</span><span class="token punctuation">(</span>_stableAmount <span class="token operator">&lt;=</span> totalStableStored<span class="token punctuation">,</span> <span class="token string">&quot;not enough stable coin left in the contract&quot;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token builtin">uint256</span> tokenAmount <span class="token operator">=</span> <span class="token function">convertUsdToToken</span><span class="token punctuation">(</span>_stableAmount<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        totalStableStored <span class="token operator">-=</span> _stableAmount<span class="token punctuation">;</span>
+        <span class="token function">IERC20</span><span class="token punctuation">(</span>token<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">transferFrom</span><span class="token punctuation">(</span>msg<span class="token punctuation">.</span>sender<span class="token punctuation">,</span> <span class="token builtin">address</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">,</span> tokenAmount<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// --&gt; bingo, freeze time! zzzzz *freezing beam sounds*</span>
+        <span class="token function">IERC20</span><span class="token punctuation">(</span>stableCoin<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">transfer</span><span class="token punctuation">(</span>msg<span class="token punctuation">.</span>sender<span class="token punctuation">,</span> _stableAmount<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<p>Finally, I was aware of the full impact, an attacker could have set the TAL token in a way that it would revert on transfers, so that the whole admin controlled swap function would revert and lock almost half a million dollars in the contract, forever. (As can be seen from the transaction of the whitehack conducted by the protocol, <a href="https://explorer.celo.org/tx/0x386e3baa6c2fe111002d5d84b5880c05ef1d5615770e70c38b824aeff63bb6b5/token-transfers" rel="noreferrer" target="_blank">465k USD to be exact</a>).</p>
+<p>This would make a critical severity issue, as the “permanent freeze of funds” was listed as an impact of critical severity in the bug bounty page. I immediately crafted a report detailing the critical severity, and Sai appended it to the submission on Immunefi.</p>
+<p>In a hour or so, the team called <code>setToken()</code> with a temporary non-malicious TAL token to block any attack possibility before they drain the vulnerable contract for good. (They did this before they were aware of the critical impact.) Later, they reviewed the updated report, and after some discussions, they agreed with our assessed critical severity and upgraded the issue.</p>
+<p>This concludes the story of how an informational issue ended up being a critical issue that saved a lot of money, yet I want to talk about some additional exciting stuff.</p>
+<h3>How did the team save the funds?</h3>
+<p>As mentioned above, the team created a fake non-malicious TAL token and set it as the TAL token of the staking contract to block any attack attempt utilizing this scenario. Then, they called <code>swapStableForToken()</code>, transferring their fake TAL token to the staking contract (without reverting) and got back the stablecoins, <a href="https://explorer.celo.org/tx/0x386e3baa6c2fe111002d5d84b5880c05ef1d5615770e70c38b824aeff63bb6b5/token-transfers" rel="noreferrer" target="_blank">effectively draining the contract</a>.</p>
+<h3>Freezing funds not cool enough? Enter: Ransom contracts</h3>
+<p>After figuring out the full severity of the bug with Sai, I proceeded to have a late breakfast, and while meditating on the bug, an interesting thought popped in my mind.</p>
+<p>What if you didn’t stop at just reverting on transfers and freezing the funds? After all, you decide what kind of maliciousness the attacker controlled TAL token going to have, why settle with a simple revert-on-transfer when you can have a ransom contract?</p>
+<p>(The code below may not be fit for production use. Using it in production may result in jail time or worse, waste of gas, looking at you, naughty blackhat.)</p>
+<pre class="language-solidity"><code class="language-solidity"><span class="token comment">/// @author Sai</span>
+    <span class="token builtin">bool</span> ransom_paid<span class="token punctuation">;</span>
+    <span class="token builtin">address</span> owner<span class="token punctuation">;</span>
+    <span class="token keyword">function</span> <span class="token function">withdrawRansom</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">public</span> <span class="token punctuation">{</span>
+         <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token builtin">address</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">.</span>balance <span class="token operator">&gt;</span> <span class="token number">100</span> ether<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+             <span class="token keyword">payable</span><span class="token punctuation">(</span>owner<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">transfer</span><span class="token punctuation">(</span><span class="token builtin">address</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">.</span>balance<span class="token punctuation">)</span><span class="token punctuation">;</span>
+             ransom_paid <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+         <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">function</span> <span class="token function">transferFrom</span><span class="token punctuation">(</span><span class="token builtin">address</span> <span class="token keyword">from</span><span class="token punctuation">,</span> <span class="token builtin">address</span> to<span class="token punctuation">,</span> <span class="token builtin">uint256</span> amount<span class="token punctuation">)</span> <span class="token keyword">public</span> override <span class="token keyword">returns</span> <span class="token punctuation">(</span><span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>ransom_paid<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">revert</span><span class="token punctuation">(</span><span class="token string">&quot;Ransom is not paid!&quot;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span> <span class="token comment">// ransom paid, unlock funds</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+<p>The snippet above essentially operates the same with a revert-on-transfer malicious token until the ransom is paid. As the admin swap function makes calls to TAL token’s <code>transferFrom()</code> function, it stops the execution by reverting. But after the symbolic ransom of &gt;100 ether is paid to the contract, the victim (or anyone else) can call the function <code>withdrawRansom()</code> which transfers the ransom to the attacker’s address and toggles the <code>ransom_paid</code> boolean, which in turn lets calls through <code>transferFrom</code>, allowing the victim to withdraw their otherwise frozen stablecoin funds.</p>
+<p>While it does not change anything when it comes to the severity of the bug, I found this idea of ransom contracts pretty interesting as it highlights that the freeze of funds attacks are not necessarily without financial motive for the attacker.</p>
+<p>Another remarkable feature of ransom contracts is that their source code can be verified by a chain explorer and the ransom transaction can be simulated beforehand, so the victim knows that if they pay the ransom, they will certainly get their funds. This creates a much more effective and transparent ransom scheme than usual ransomware or meatspace ransoms in true crypto fashion.</p>
+<p>I haven’t heard of such an attack happening in the wild yet. If you have, please come to SkidsDAO Discord server (link below) and let me know. I think I might be a ransom contract nerd.</p>
+<hr/>
+<h3>About us</h3>
+<p>We&#x27;re kebabsec, a bug squashing trio. We&#x27;re members of the on-chain whitehat collective <a href="https://twitter.com/SkidsDAO" rel="noreferrer" target="_blank">SkidsDAO</a> and provide security audit services along with the rest of the team, so if you are interested in securing your contracts, we can help.</p>
+<h4>Socials</h4>
+<p>The author of this text, myself, <a href="https://twitter.com/okkothejawa" rel="noreferrer" target="_blank">okkothejawa</a><br/>
+<!-- -->Finder of this vulnerability, <a href="https://twitter.com/sigh242" rel="noreferrer" target="_blank">Sai</a><br/>
+<!-- -->Our lovely team, <a href="https://twitter.com/kebabsec" rel="noreferrer" target="_blank">kebabsec</a><br/>
+<!-- -->Greatest hacker space in crypto, <a href="https://twitter.com/SkidsDAO" rel="noreferrer" target="_blank">SkidsDAO</a>, <a href="https://skidsdao.xyz/" rel="noreferrer" target="_blank">skidsdao.xyz</a><br/>
+<a href="https://discord.com/invite/NHNRUKMCz2" rel="noreferrer" target="_blank">SkidsDAO Discord server</a></p>
+<hr/>
+<h3>Special thanks</h3>
+<p>To my teammates <a href="https://twitter.com/FlameHorizon1" rel="noreferrer" target="_blank">FlameHorizon</a> and <a href="https://twitter.com/sigh242" rel="noreferrer" target="_blank">Sai</a>, for reviewing this text countless times and progressing with me in our journey.</p>
+<p>To my sensei <a href="https://twitter.com/0xsomnus" rel="noreferrer" target="_blank">Sleepy</a>, for being the main editor of this text and guiding me in the art of securing this dark forest.</p>
+<p>To the queen of CT, <a href="https://twitter.com/0xcarnation" rel="noreferrer" target="_blank">Carnation</a>, for providing feedback with this text and being the patron of kebabsec, and answering my endless questions about DeFi.</p>
+<p>To the assembly wizard of SkidsDAO and my mentor, <a href="https://twitter.com/jtriley_eth" rel="noreferrer" target="_blank">jtriley</a>, for reviewing this text and motivating me to learn EVM and Foundry.</p>
+<p>To great dev of ██████████, <a href="https://twitter.com/ppmoon69" rel="noreferrer" target="_blank">kp</a>, for giving important suggestions to make this text more digestible and for being a good friend of kebabsec.</p>
+<p>To <a href="https://twitter.com/Francisco__Leal" rel="noreferrer" target="_blank">fleal</a> from Talent Protocol, for reviewing this text, and to Talent Protocol for their exemplary care for security and security researchers.</p>
+<hr/>
+<h3>Links to the snippets of code in the text for the curious readers</h3>
+<p><a href="https://github.com/talentprotocol/contracts/blob/67be03c3763e19fbb144b6afa61935956daca473/contracts/staking/StableThenToken.sol#L33-L42" rel="noreferrer" target="_blank">First snippet, </a><code>setToken</code><a href="http://http:" rel="noreferrer" target=""> function</a></p>
+<p><a href="https://github.com/talentprotocol/contracts/blob/67be03c3763e19fbb144b6afa61935956daca473/contracts/staking/StableThenToken.sol#L44-L54" rel="noreferrer" target="_blank">Second snippet, </a><code>stablePhaseOnly</code><a href="http://http:" rel="noreferrer" target=""> and </a><code>tokenPhaseOnly</code><a href="http://http:" rel="noreferrer" target=""> modifiers</a></p>
+<p><a href="https://github.com/talentprotocol/contracts/blob/67be03c3763e19fbb144b6afa61935956daca473/contracts/Staking.sol#L224-L240" rel="noreferrer" target="_blank">Third snippet, </a><code>swapStableForToken</code>
