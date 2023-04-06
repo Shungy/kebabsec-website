@@ -83,7 +83,9 @@ rssLimit  = 99
   author = true
 
   topText = []
-  bottomText = []
+  bottomText = [
+    "Audit report rights are reserved by the respective commissioning parties.",
+  ]
 
 [languages]
 	[languages.en]
@@ -100,4 +102,3 @@ rssLimit  = 99
     #
     # path = "/img/your-example-logo.svg"
     # alt = "Your example logo alt text"
-
