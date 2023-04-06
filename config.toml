@@ -39,11 +39,11 @@ rssLimit  = 99
     url = "https://github.com/kebabsec"
 
   [[params.social]]
-    name = "telegram"
-    url = ""
+    name = "email"
+    url = "kebabsecbusiness@gmail.com"
 
   [[params.social]]
-    name = "email"
+    name = "telegram"
     url = ""
 
   [[params.social]]
