@@ -10,9 +10,9 @@ rssLimit  = 99
   [markup.highlight]
     codeFences = true
     guessSyntax = true
-    lineNos = false
+    lineNos = true
     lineNumbersInTable = true
-    noClasses = false
+    noClasses = true
     tabWidth = 4
 
 [params]
@@ -49,9 +49,6 @@ rssLimit  = 99
   [[params.social]]
     name = "discord"
     url = "https://discord.com/users/303927813285609482"
-
-  [params.commento]
-    url = "https://cdn.commento.io/js/commento.js"
 
 [[menu.main]]
   identifier = "audits"
