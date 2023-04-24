@@ -176,8 +176,6 @@ R.<x> = PolynomialRing(ZZ)
 p = 906459278810089239293436146013992401709
 F_p = GF(p)
 
-found_solution = False
-
 for y in range(100, 1000):
     lhs = n*(y+1)*(x+1)*(x+y)
     rhs = x*(x+1)*(x+y) + y*(y+1)*(x+y) + (y+1)*(x+1)
@@ -191,7 +189,6 @@ for y in range(100, 1000):
 
     for root, _ in roots_mod_p:
         if gcd(root, y) == 1 and root > 100 and root < 2^127:
-            found_solution = True
             print(f"{y} {root}")
 ```
 
