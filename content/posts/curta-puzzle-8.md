@@ -151,7 +151,9 @@ n(y+1)(x+1) ≡ x(x+1) + y(y+1) + inv(x+y)(y+1)(x+1)           mod p
 n(y+1)(x+1)(x+y) ≡ x(x+1)(x+y) + y(y+1)(x+y) + (y+1)(x+1)    mod p
 ```
 
-This is actually almost the solution. However, I made the mistake of consulting to GPT4, which adamantly insisted that the equation cannot be simplified and I must resort to brute forcing. Unfortunately, brute forcing is not possible in *mod 906459278810089239293436146013992401709*! This is strangely the place I got stuck the longest. I have spent many hours reading about elliptic curves, trying to actually understand what this is and how to solve it. I was certain. I know I could not trust a dumb GPT bot, so I finally took the pen and paper and expanded the equation as much as I can. Then I tried it with a known value of `y`. I realized there is a solution for `x` for most `y`s, because some of the solutions submitted so far had used very low `y` values. So with the assumption that I can use any `y` and that I should solve for `x`, I worked to bring the congruence to a more useful state.
+This is actually almost the solution. However, I made the mistake of consulting to GPT4, which adamantly insisted that the equation cannot be simplified and I must resort to brute forcing. Unfortunately, brute forcing is not possible in *mod 906459278810089239293436146013992401709*! This is strangely the place I got stuck the longest. I have spent many hours reading about elliptic curves, trying to actually understand what this is and how to solve it.
+
+I was not going to give up. I knew I could not trust a dumb GPT bot, so I finally took the pen and paper and expanded the equation as much as I can. Then I tried it with a known value of `y`. I realized there has to be a solution for `x` for most `y`s, because some of the solutions submitted so far had used very low `y` values. So with the assumption that I can use any `y` and that I should solve for `x`, I worked to bring the congruence to a more useful state.
 
 ```txt
 n(y+1)(x+1)(x+y) ≡ x(x+1)(x+y) + y(y+1)(x+y) + (y+1)(x+1)    mod p ==>
