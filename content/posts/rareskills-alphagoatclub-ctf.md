@@ -268,3 +268,12 @@ With that, we can conclude today's CTF write up. Thanks to [RareSkills](https://
 And here is my cool goat NFT.
 
 {{< image src="/alphagoatnft/Screenshot from 2023-04-26 00-09-34.png" alt="Shung NFT" position="center" >}}
+
+## Further reading and referenced links
+
+* [OpenZeppelin ECDSA library comment](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/f959d7e4e6ee0b022b41e5b644c79369869d8411/contracts/utils/cryptography/ECDSA.sol#L82-L86)
+* [OpenZeppelin PR discussion](https://github.com/OpenZeppelin/openzeppelin-contracts/pull/2532#discussion_r607615687)
+* [Script to get public key](https://ethereum.stackexchange.com/a/141938)
+* [Script to craft addresses](https://gist.github.com/DavidBurkett/48e28469401526c25d715be3e29b6c14)
+* [ECDSA Wikipedia Page](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm)
+* [MoonMath Manual](https://leastauthority.com/community-matters/moonmath-manual/)
