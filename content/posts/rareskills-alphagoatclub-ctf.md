@@ -50,7 +50,7 @@ This was a contract deployed on Polygon: [`0xc80fC50b697b20F2F0a1Cef247D77bC8516
     }
 ```
 
-I overruled `mint` function immediately. Because `publicSale` variable was set to false and only owner could set it to true. This leaves us with one function: `exclusiveBuy`. I first did a `commit` transaction so that `alreadyComitted` modifier does not revert. The commit-then-submit scheme was supposedly for preventing frontrunning the solutions. Then I started looking for the actual solution.
+I overruled `mint` function immediately because `publicSale` variable was set to false, and only the owner could set it to true. This leaves us with one function: `exclusiveBuy`. Before looking for solutions first I did a `commit` transaction so that `alreadyComitted` modifier does not revert. The commit-then-submit scheme was supposedly for preventing frontrunning the solutions. After that was out of the way, I started looking for the solution.
 
 From the `exclusiveBuy` function it was easy to recognize that we only had to pass the `require(matchAddressSigner(hash_, signature)` check. This check simply ensures that the `signer` had signed the `_hash`.
 
