@@ -5,6 +5,7 @@ theme = "hello-friend-ng"
 
 paginate = 99
 rssLimit  = 99
+disableRSS = false
 
 [markup]
   [markup.highlight]
@@ -75,7 +76,7 @@ rssLimit  = 99
 
 [params.footer]
   trademark = true
-  rss = false
+  rss = true
   copyright = true
   author = true
 

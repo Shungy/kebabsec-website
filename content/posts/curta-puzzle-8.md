@@ -212,3 +212,34 @@ done < raw-output.txt > output.txt
 Once I had the possible solutions, I copied them to my foundry test file as an array, and ran the test until a solution was accepted.
 
 This was quite the torture. Thank you, [cts🌸](https://twitter.com/gf_256) and [Curta](https://twitter.com/curta_ctf).
+
+## Addendum: The intended solution
+
+After Phase 1 was over, cts posted the intended solution on Discord.
+
+```sage
+seed = 17784040235812539743353
+
+P.<X,Y,Z> = ProjectiveSpace(GF(906459278810089239293436146013992401709),2)
+fuck = X*(X+Z)*(X+Y) + Y*(Y+Z)*(X+Y) + Z*(Y+Z)*(X+Z) - seed *(X+Y)*(X+Z)*(Y+Z)
+
+f = EllipticCurve_from_cubic(fuck, [-1,1,0])
+finv = f.inverse()
+C = f.codomain()
+
+g = C.gens()[0]
+
+p = g
+for i in range(0,100000):
+        a,b,c = finv(p)
+        if gcd(int(a), int(b)) == 1 and int(a) < 2^127 and int(b) < 2^127 and int(a)+int(b) < 2^127 and int(1/(a+b)) < 2^128 and int(1/(b+c)) < 2^128 and int(1/(a+c)) < 2^128:
+                print('found', i)
+                print(p)
+                print(a,b,c)
+                break
+        p += g
+```
+
+From this, we can see that we can define an elliptic curve from a cubic equation. Then pick any point on this point and the inverse of it leads to the solution after filtering possible solutions based on the constraints.
+
+It is fun to see how elegant the intended solution is against the hacky job I did.
