@@ -22,7 +22,7 @@ disableRSS = false
 	dateformNum = "2006-01-02"
 	dateformNumTime = "2006-01-02 15:04"
 	homeSubtitle = "bug squashing squad living on chain 🐞🎯"
-  enableThemeToggle = true
+  enableThemeToggle = false
   enableSharingButtons = true
   enableGlobalLanguageMenu = false
 
